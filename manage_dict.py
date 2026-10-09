@@ -201,7 +201,11 @@ MENU = """
 def menu():
     while True:
         print(MENU)
-        c = input("请选择: ").strip()
+        try:
+            c = input("请选择: ").strip()
+        except EOFError:
+            print("退出")
+            break
         if c == "1":
             word = input("  中文词: ").strip()
             wubi = input("  五笔码（可留空）: ").strip() or None
