@@ -1,0 +1,9 @@
+# 开发工具与调试脚本（含联系人测试样例，不推送）
+tools/
+
+# 原始词典 MDX（Heliknight 原创，版权原因不推送）
+mdx/
+
+# 安装包（zip 建议走 GitHub Releases）
+*.zip
+五笔86拼音输入法-安装包/

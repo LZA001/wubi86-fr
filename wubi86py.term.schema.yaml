@@ -1,0 +1,21 @@
+# Rime schema
+# encoding: utf-8
+# JGJ130-2011 脚手架术语拼音词表部署桩：仅用于触发 librime 编译 wubi86py.term.dict.yaml
+# （librime 部署只编译顶层 translator/dictionary，子 translator 词表需独立 schema 触发）
+
+schema:
+  schema_id: wubi86py.term
+  name: "JGJ130术语词表"
+  version: "2026-10-08"
+  description: |
+    JGJ130-2011 建筑施工扣件式钢管脚手架安全技术规范术语拼音词表（tools 生成）。
+    部署桩，不直接使用；候选由 wubi86py 方案的 translator_term 加载。
+  dependencies: []
+
+translator:
+  dictionary: wubi86py.term
+  enable_user_dict: false
+  enable_sentence: false
+  enable_encoder: false
+  enable_completion: false
+  max_phrase_length: 8

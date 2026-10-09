@@ -1,0 +1,132 @@
+# Rime schema
+# encoding: utf-8
+# 五笔86 · 拼音辅助 · 法语注释
+#
+# 独立编制的五笔输入方案（在纯中文版基础上按用户要求加法语译词注释）：
+#   - 五笔为主：输入五笔编码（1~4 码）直接出字/词候选
+#   - 拼音辅助：输入全拼拼音直接出拼音候选，打不出五笔时兜底
+#   - 拼音候选不写入用户词典，不会污染五笔的用户词学习
+#   - 法语注释：候选中文右侧显示对应法语（lua_filter@*fr_comment，词库 fr_data.lua）
+#   - 上屏方式：空格=中文；回车=原码；Tab=法语词级（lua_processor@*wubi86py_commit，仅词级，无 F2）
+#
+# 码表：wubi86py（源自 rime/rime-wubi 官方 wubi86 码表，29,116 词）
+# 拼音词典：luna_pinyin（小狼毫内置全拼大词库）
+# 法语词库：lua/fr_data.lua（29,916 条，含法汉汉法词典 MDX 层）
+
+schema:
+  schema_id: wubi86py
+  name: "五笔86·拼音"
+  version: "1.0.0"
+  author:
+    - 發明人 王永民先生
+  description: |
+    五筆字型86版 + 拼音辅助混输 + 法语译词注释
+    输入五笔编码出字/词；输入全拼拼音出拼音候选，作为打不出五笔时的兜底。
+    候选中文右侧显示对应法语；空格中文上屏、回车原码上屏、Tab 法语上屏。
+    词库见 lua/fr_data.lua（含法汉汉法词典 MDX 层）。
+  dependencies:
+    - luna_pinyin
+    - wubi86py.term   # JGJ130 脚手架术语拼音词表（tools/add_jgj130_pinyin.py 生成）
+
+switches:
+  - name: ascii_mode
+    reset: 0
+    states: [ 中文, 西文 ]
+  - name: full_shape
+    states: [ 半角, 全角 ]
+  - name: extended_charset
+    states: [ 常用, 增廣 ]
+  - name: simplification
+    states: [ 简, 繁 ]
+    reset: 1   # 默认简体输出（luna_pinyin 词库含繁体候选，默认转简体）
+  - name: ascii_punct
+    states: [ 。，, ．， ]
+
+engine:
+  processors:
+    - lua_processor@*wubi86py_commit   # Tab 法文上屏（须排在 selector 之前才拿得到按键）
+    - ascii_composer
+    - recognizer
+    - key_binder
+    - speller
+    - punctuator
+    - selector
+    - navigator
+    - express_editor
+  segmentors:
+    - ascii_segmentor
+    - matcher
+    - abc_segmentor
+    - punct_segmentor
+    - fallback_segmentor
+  translators:
+    - punct_translator
+    - table_translator
+    - script_translator@translator_pinyin   # 拼音混输：全拼直接出候选
+    - script_translator@translator_term     # JGJ130 术语拼音词表（独立 translator，避免污染 luna_pinyin）
+    - reverse_lookup_translator
+  filters:
+    - simplifier   # 简繁转换（luna_pinyin 拼音候选含繁体，统一转简体；五笔候选无繁体不受影响）
+    - lua_filter@*fr_comment   # 候选中文后显示对应法语（词库 lua/fr_data.lua）
+    - uniquifier
+
+speller:
+  alphabet: zyxwvutsrqponmlkjihgfedcba
+  delimiter: " ;'"
+
+translator:
+  dictionary: wubi86py
+  enable_charset_filter: true
+  enable_sentence: false
+  enable_encoder: true
+  encode_commit_history: true
+  max_phrase_length: 4
+  disable_user_dict_for_patterns:
+    - "^z.*$"
+
+# 拼音并行翻译器：五笔打不出时直接输全拼兜底；
+# 候选不写用户词典（不污染五笔自学习）、不补全（避免五笔单码被拼音补全干扰）、不出整句
+translator_pinyin:
+  dictionary: luna_pinyin
+  enable_user_dict: false
+  enable_sentence: false
+  enable_encoder: false
+  enable_completion: false
+  max_phrase_length: 8
+  tags: [abc, matcher]
+
+# JGJ130-2011 脚手架术语拼音词表（tools 生成，权重 1000000）
+translator_term:
+  dictionary: wubi86py.term
+  enable_user_dict: false
+  enable_sentence: false
+  enable_encoder: false
+  enable_completion: false
+  max_phrase_length: 8
+  tags: [abc, matcher]
+
+reverse_lookup:
+  dictionary: luna_pinyin
+  enable_completion: true
+  prefix: ""
+  suffix: "'"
+  tips: 〔拼音〕
+  preedit_format:
+    - xform/([nl])v/$1ü/
+    - xform/([nl])ue/$1üe/
+    - xform/([jqxy])v/$1u/
+
+punctuator:
+  import_preset: symbols
+
+simplifier:
+  opencc_config: t2s.json
+  option_name: simplification
+
+key_binder:
+  import_preset: default
+
+recognizer:
+  import_preset: default
+  patterns:
+    punct: '^/([0-9]0?|[A-Za-z]+)$'
